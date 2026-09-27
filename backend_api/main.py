@@ -1,7 +1,12 @@
+from backend_api.database.database import Base, engine
 from backend_api.routers import notes_router
 from fastapi import FastAPI
 
 
+# ¡Importante! Tenemos que ejecutar las migrations (alembic) para crear la tabla notes
+
+# Esto crea las tablas en la base de datos SQLite si no existen todavía
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Mi primera API con FastAPI",

@@ -29,7 +29,7 @@ class NoteManager:
         self.db_session.refresh(new_note)
         return new_note
 
-    def get_note_by_id(self, note_id):
+    def get_note_by_id(self, note_id, return_db_note=True):
         from backend_api.models.note import (
             Note,
         )  # Importación local para evitar bucles circulares
@@ -52,7 +52,7 @@ class NoteManager:
         self.is_expired()  # Esto lanzará un ValueError si la nota ha expirado
 
         # 3. DEVOLVER SELF: Retornamos la propia instancia ya validada y poblada
-        return self
+        return db_note if return_db_note else self
 
     def get_all_notes(self, include_expired=False):
         from backend_api.models.note import Note  # Importamos el modelo Note aquí para evitar problemas de importación circular
@@ -70,7 +70,7 @@ class NoteManager:
 
         checked_data = NoteUpdate(**note_data.dict(exclude_unset=True))
         
-        note = self.get_note_by_id(note_id)
+        note = self.get_note_by_id(note_id, False)
         if note:
             for key, value in note_data.dict(exclude_unset=True).items():
                 setattr(note, key, value)

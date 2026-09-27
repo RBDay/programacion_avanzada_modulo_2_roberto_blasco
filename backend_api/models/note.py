@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from backend_api.database import Base
+from backend_api.database.database import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 
 
