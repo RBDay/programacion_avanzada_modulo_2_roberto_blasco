@@ -108,8 +108,7 @@ class NoteManager:
 
     def mark_as_completed(self, note_id: int):
         """Marca una nota específica como completada."""
-        from backend_api.models.note import Note
-        db_note = self.db_session.query(Note).filter(Note.id == note_id).first()
+        db_note = self.get_note_by_id(note_id)
         if not db_note:
             raise HTTPException(status_code=404, detail="Nota no encontrada")
         
