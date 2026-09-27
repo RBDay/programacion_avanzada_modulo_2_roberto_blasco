@@ -90,3 +90,21 @@ La siguiente es la organización prevista y el propósito general de cada parte:
 - **Pydantic**: validación y serialización de datos.
 - **Requests**: envío de peticiones HTTP desde el script de prueba.
 - **Alembic**: gestión de migraciones del esquema de la base de datos.
+
+
+## Rutas del proyecto
+# Rutas de notas
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST   | /api/notes/ | Crear una nueva nota |
+| GET    | /api/notes/ | Obtener todas las notas |
+| GET    | /api/notes/{note_id} | Obtener una nota por su ID |
+| DELETE | /api/notes/{note_id} | Eliminar una nota por su ID |
+| GET    | /api/notes/expired/list | Obtener notas caducadas |
+| PATCH  | /api/notes/{note_id}/mark_completed | Marcar una nota como completada |
+
+
+# Rutas por defecto
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET    | /    | Comprueba el estado de la api |
