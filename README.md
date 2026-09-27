@@ -99,6 +99,7 @@ La siguiente es la organización prevista y el propósito general de cada parte:
 | POST   | /api/notes/ | Crear una nueva nota |
 | GET    | /api/notes/ | Obtener todas las notas |
 | GET    | /api/notes/{note_id} | Obtener una nota por su ID |
+| PUT    | /api/notes/{note_id} | Actualiza una nota por su ID |
 | DELETE | /api/notes/{note_id} | Eliminar una nota por su ID |
 | GET    | /api/notes/expired/list | Obtener notas caducadas |
 | PATCH  | /api/notes/{note_id}/mark_completed | Marcar una nota como completada |

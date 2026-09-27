@@ -40,6 +40,20 @@ def get_single_note(note_id: int, db: Session = Depends(get_bd)):
   except ValueError as ve:
       raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
 
+@router.put("/{note_id}", response_model=NoteResponse, summary="Actualizar una nota por su ID")
+def update_existing_note(note_id: int, note_data: NoteUpdate, db: Session = Depends(get_bd)):
+    """Actualiza una nota específica dado su ID."""
+    manager = NoteManager(title="", content="", deadline=datetime.now(), db_session=db)
+    try:
+        updated_note = manager.update_note(note_id, note_data)
+        if not updated_note:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nota no encontrada")
+        return updated_note
+    except HTTPException as e:
+        raise e
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+
 @router.get("/", response_model=List[NoteResponse], summary="Obtener todas las notas")
 def get_all_notes(include_expired: bool = False, db: Session = Depends(get_bd)):
     """Obtiene la lista de todas las notas, permitiendo filtrar opcionalmente las caducadas."""

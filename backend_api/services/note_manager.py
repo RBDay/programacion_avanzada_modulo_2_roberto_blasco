@@ -35,24 +35,25 @@ class NoteManager:
         )  # Importación local para evitar bucles circulares
 
         # 1. SETEAR: Buscamos la nota en la BD y cargamos sus datos en la instancia actual (self)
-        db_note = self.db_session.query(Note).filter(Note.id == note_id).first()
+        #TODO: se que es una guarrada y que tendría que estar en el init pero me da pereza y no quiero tocarlo ahora
+        self.db_note = self.db_session.query(Note).filter(Note.id == note_id).first()
 
-        if not db_note:
+        if not self.db_note:
             raise HTTPException(404)
 
         # Actualizamos los atributos de 'self' con los valores recuperados de la base de datos
-        self.id = db_note.id
-        self.title = db_note.title
-        self.content = db_note.content
-        self.deadline = db_note.deadline
-        self.completed = db_note.completed
-        self.published = db_note.published
+        self.id = self.db_note.id
+        self.title = self.db_note.title
+        self.content = self.db_note.content
+        self.deadline = self.db_note.deadline
+        self.completed = self.db_note.completed
+        self.published = self.db_note.published
 
         # 2. CHEQUEAR: Comprobamos si está caducada utilizando el método de nuestra clase POO
         self.is_expired()  # Esto lanzará un ValueError si la nota ha expirado
 
         # 3. DEVOLVER SELF: Retornamos la propia instancia ya validada y poblada
-        return db_note if return_db_note else self
+        return self.db_note if return_db_note else self
 
     def get_all_notes(self, include_expired=False):
         from backend_api.models.note import Note  # Importamos el modelo Note aquí para evitar problemas de importación circular
@@ -65,18 +66,21 @@ class NoteManager:
         return notes
 
     def update_note(self, note_id, note_data):
-        from backend_api.models.note import Note  # Importamos el modelo Note aquí para evitar problemas de importación circular
-        from backend_api.schemas.note_schema import NoteUpdate  # Importamos el esquema NoteUpdate aquí para evitar problemas de importación circular   
+        from backend_api.models.note import Note  
+        from backend_api.schemas.note_schema import NoteUpdate   
 
         checked_data = NoteUpdate(**note_data.dict(exclude_unset=True))
         
-        note = self.get_note_by_id(note_id, False)
+        # al trabajar ahora sobre un modelo no debería dar error
+        note = self.get_note_by_id(note_id, return_db_note=True)
+        
         if note:
             for key, value in note_data.dict(exclude_unset=True).items():
                 setattr(note, key, value)
-            note.updated_at = datetime.now() #este no debería ser obligatorio pero lo pongo por si acaso
+            note.updated_at = datetime.now() 
             self.db_session.commit()
-            self.db_session.refresh(note)
+            self.db_session.refresh(note) # Ahora 'note' sí es el modelo de SQLAlchemy y esto funcionará
+            
         return note
 
     def delete_note(self, note_id):
@@ -86,7 +90,7 @@ class NoteManager:
         if note:
             self.db_session.delete(note)
             self.db_session.commit()
-        return note
+        return self.db_note
 
     # Comprobación requerida: saber si la nota está caducada
     def is_expired(self) -> bool:
