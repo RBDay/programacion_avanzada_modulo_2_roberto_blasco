@@ -1,15 +1,74 @@
 # API de notas
 
-Proyecto de una API REST desarrollada con **FastAPI**, **SQLAlchemy** y **SQLite**. FastAPI genera automáticamente la documentación interactiva de los endpoints.
+Proyecto de una API REST desarrollada con **FastAPI**, **SQLAlchemy** y **MySQL** (con soporte de migraciones mediante **Alembic** y orquestación con **Docker Compose**). FastAPI genera automáticamente la documentación interactiva de los endpoints.
 
-> **Nota sobre la construcción:** Se ha intentado emular el sistema de funcionamiento del ORM de Laravel (eloquet). Por ello se trabaja con la BD metida en una "sesión" que permite ser llamada desde cualquier sitio. Esto implica ciertos cambios a nivel de Python y Fastapi como la gestión de tareas en segundo plano mediante hilos. 
+> **Nota sobre la construcción:** Se ha intentado emular el sistema de funcionamiento del ORM de Laravel (eloquent). Por ello se trabaja con la BD metida en una "sesión" que permite ser llamada desde cualquier sitio. Esto implica ciertos cambios a nivel de Python y FastAPI como la gestión de tareas en segundo plano mediante hilos.
 
-## Requisitos
+---
+
+## Despliegue con Docker (Recomendado)
+
+El proyecto incluye configuración completa de Docker y Docker Compose para gestionar los 4 servicios:
+- **`mysql`**: Base de datos MySQL 8.0 persistente.
+- **`phpmyadmin`**: Panel web para gestionar la base de datos MySQL.
+- **`api`**: Contenedor FastAPI con ejecución automática de migraciones Alembic antes del arranque.
+- **`requests_api`**: Contenedor de pruebas que valida todos los endpoints y casos de error/validación.
+
+### 1. Levantar el stack completo
+
+```bash
+docker compose up -d
+```
+
+Al levantar los contenedores:
+1. MySQL se inicializa y espera hasta estar listo (`healthcheck`).
+2. La API se conecta a MySQL y aplica automáticamente las migraciones pendientes con `alembic upgrade head`.
+3. El servidor FastAPI se inicia con recarga en caliente (`--reload`).
+4. El contenedor de pruebas (`requests_api`) se ejecuta automáticamente, prueba todos los endpoints y sus validaciones, y finaliza con éxito.
+
+### 2. Acceso a los servicios
+
+| Servicio | URL Host | Credenciales / Info |
+|---|---|---|
+| **API REST** | <http://localhost:8001> | Endpoint raíz: `GET /` |
+| **Swagger UI** | <http://localhost:8001/docs> | Documentación interactiva OpenAPI |
+| **ReDoc** | <http://localhost:8001/redoc> | Documentación alternativa |
+| **phpMyAdmin** | <http://localhost:8081> | **Servidor:** `mysql` \| **Usuario:** `notes_user` \| **Password:** `notes_password` |
+| **MySQL (Host)** | `localhost:3308` | Base de datos: `notes_db` |
+
+*(Nota: Los puertos 8001, 8081 y 3308 pueden cambiarse en el archivo `.env` según tus necesidades).*
+
+### 3. Ejecutar la suite de pruebas en cualquier momento
+
+Para lanzar nuevamente el contenedor con `requests_api.py` y probar todos los endpoints y sus validaciones:
+
+```bash
+docker compose run --rm requests_api
+```
+
+También puedes ejecutarlo localmente desde el host (con el entorno virtual activo):
+
+```bash
+python requests_api.py
+```
+
+### 4. Parar los contenedores
+
+```bash
+docker compose down
+```
+
+---
+
+## Ejecución en Local (Sin Docker)
+
+### Requisitos
 
 - Python 3.10 o superior.
 - `pip`.
+- Base de datos MySQL o SQLite.
 
-## Instalación
+### Instalación
 
 Desde la carpeta raíz del proyecto, instala las dependencias:
 
@@ -17,25 +76,16 @@ Desde la carpeta raíz del proyecto, instala las dependencias:
 pip install -r requirements.txt
 ```
 
-Opcionalmente, crea y activa antes un entorno virtual para aislar las dependencias del proyecto.
-
-## Levantar la API
-
-Desde la carpeta raíz del proyecto, ejecuta:
+### Migraciones y Ejecución
 
 ```bash
-uvicorn backend_api.main:app --reload
+# Aplicar migraciones
+alembic upgrade head
+
+# Levantar servidor
+uvicorn backend_api.main:app --reload --port 8001
 ```
 
-El comando indica a Uvicorn que cargue el objeto `app` definido en `backend_api/main.py`. La opción `--reload` reinicia el servidor cuando detecta cambios en el código; se recomienda para desarrollo.
-
-Cuando el servidor esté en marcha, abre:
-
-- API: <http://127.0.0.1:8000>
-- Documentación interactiva Swagger: <http://127.0.0.1:8000/docs>
-- Documentación alternativa ReDoc: <http://127.0.0.1:8000/redoc>
-
-Para que el comando funcione, `backend_api/main.py` debe crear la aplicación FastAPI y asignarla a una variable llamada `app`. Los routers deben incluirse en esa aplicación para que sus endpoints aparezcan en `/docs`.
 
 ## Estructura del proyecto
 

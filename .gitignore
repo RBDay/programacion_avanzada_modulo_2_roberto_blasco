@@ -1,1 +1,11 @@
 backend_api/.env
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+notes.db
+*.sqlite
+*.sqlite3

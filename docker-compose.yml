@@ -1,0 +1,105 @@
+services:
+#contenedor para la base de datos y su consulta
+  mysql:
+    image: mysql:8.0
+    container_name: notes_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-notes_db}
+      MYSQL_USER: ${DB_USER:-notes_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-notes_password}
+    ports:
+      - "${MYSQL_PORT:-3308}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD:-root_password}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - notes_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: notes_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USER:-notes_user}
+      PMA_PASSWORD: ${DB_PASSWORD:-notes_password}
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - notes_network
+
+#contenedor para la api
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notes_api
+    restart: unless-stopped
+    #lanzamos uvicorn como lo haciamos antes de docker compose
+    command: ["uvicorn", "backend_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-notes_db}
+      DB_USER: ${DB_USER:-notes_user}
+      DB_PASSWORD: ${DB_PASSWORD:-notes_password}
+      RUN_MIGRATIONS: "true"
+    ports:
+      - "${API_PORT:-8080}:8000"
+    #se que podría ser más elegante pero este proyecto ya existia --- me daba pereza reubicarlo todo
+    volumes:
+      - ./backend_api:/app/backend_api
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./main.py:/app/main.py
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - notes_network
+
+#este contenedor es para hacer los requests y probar la api --- como ya lo tenía lo he dejado
+#insisto en que sería mil veces más elegante reubicarlo todo y hacer que la api se quedara en su carpeta pero.... 
+  requests_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notes_requests_api
+    restart: "no"
+    command: ["python", "requests_api.py"]
+    environment:
+      API_URL: http://api:8000
+    volumes:
+      - ./requests_api.py:/app/requests_api.py
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - notes_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+#creamos el network como pide el enunciado --- he escogido notes_network dado que el proyecto iva de eso 
+networks:
+  notes_network:
+    driver: bridge

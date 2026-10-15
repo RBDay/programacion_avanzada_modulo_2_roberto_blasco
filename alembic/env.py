@@ -12,12 +12,16 @@ from alembic import context
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 # 2. Importar tu Base y tus modelos para que el autogenerate detecte las tablas
-from backend_api.database.database import Base
+from backend_api.database.database import Base, SQLARCHEMY_DATABASE_URL
 from backend_api.models.note import Note
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+if SQLARCHEMY_DATABASE_URL:
+    config.set_main_option("sqlalchemy.url", SQLARCHEMY_DATABASE_URL)
+
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
